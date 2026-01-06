@@ -1,0 +1,2722 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Language Assistant</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+  <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100%;
+            padding: 20px;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Login Screen */
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        .login-container h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        /* Main App */
+        .app-container {
+            display: none;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 26px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .username {
+            color: #555;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .section-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .section-card h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 22px;
+        }
+
+        .section-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
+            padding: 5px 10px;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .modal h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            background: #000;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .camera-controls button {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .camera-controls button:hover {
+            background: #5568d3;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            padding: 40px;
+            text-align: center;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .upload-area:hover {
+            background: #f5f5ff;
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .text-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .text-controls button, .text-controls select {
+            padding: 12px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .text-controls select {
+            background: white;
+            color: #333;
+            border: 2px solid #667eea;
+        }
+
+        .status {
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 8px;
+            text-align: center;
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .recording {
+            background: #ffebee;
+            color: #c62828;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .translation-result {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .translation-result h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .translated-text {
+            font-size: 18px;
+            color: #333;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .dictionary-container {
+            margin-top: 20px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .language-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .language-tab {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .language-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .dictionary-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .dictionary-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .dictionary-item:hover {
+            background: #e8e8ff;
+        }
+
+        .word-english {
+            font-weight: 600;
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .word-translation {
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .speak-icon {
+            display: inline-block;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .sections-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+
+            .camera-controls {
+                flex-direction: column;
+            }
+
+            .text-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body><!-- Login Screen -->
+  <div id="loginScreen" class="login-container">
+   <h1>🌐 Smart Language Assistant</h1>
+   <form id="loginForm">
+    <div class="form-group"><label for="username">Username</label> <input type="text" id="username" required autocomplete="username">
+    </div>
+    <div class="form-group"><label for="password">Password</label> <input type="password" id="password" required autocomplete="current-password">
+    </div><button type="submit" class="btn">Login</button>
+   </form>
+   <div id="loginMessage"></div>
+  </div><!-- Main App -->
+  <div id="appContainer" class="app-container">
+   <div class="container">
+    <div class="header">
+     <h1>🌐 Smart Language Assistant</h1>
+     <div class="user-info"><span class="username" id="displayUsername"></span> <button class="logout-btn" id="logoutBtn">Logout</button>
+     </div>
+    </div>
+    <div class="sections-grid">
+     <div class="section-card" data-section="camera">
+      <div class="icon">
+       📷
+      </div>
+      <h2>Live Camera Scanner</h2>
+      <p>Scan and extract text in real-time using your device camera</p>
+     </div>
+     <div class="section-card" data-section="upload">
+      <div class="icon">
+       🖼️
+      </div>
+      <h2>Image Upload OCR</h2>
+      <p>Upload images to extract text instantly</p>
+     </div>
+     <div class="section-card" data-section="text">
+      <div class="icon">
+       📝
+      </div>
+      <h2>Enter Text</h2>
+      <p>Type or paste text and listen to pronunciation</p>
+     </div>
+     <div class="section-card" data-section="voice">
+      <div class="icon">
+       🎤
+      </div>
+      <h2>Voice Typing</h2>
+      <p>Convert your speech into text instantly</p>
+     </div>
+     <div class="section-card" data-section="translator">
+      <div class="icon">
+       🔄
+      </div>
+      <h2>Translator</h2>
+      <p>Translate English to Telugu, Hindi, Tamil, Kannada</p>
+     </div>
+     <div class="section-card" data-section="dictionary">
+      <div class="icon">
+       📚
+      </div>
+      <h2>Dictionary</h2>
+      <p>Browse and listen to words in all languages</p>
+     </div>
+    </div>
+   </div>
+  </div><!-- Modals -->
+  <div id="cameraModal" class="modal">
+   <div class="modal-content"><button class="close-modal">×</button>
+    <h2>📷 Live Camera Scanner</h2>
+    <div class="camera-container">
+     <video id="cameraVideo" autoplay playsinline></video>
+     <canvas id="cameraCanvas"></canvas>
+    </div>
+    <div class="camera-controls"><button id="captureBtn">Capture &amp; Extract Text</button> <button id="stopCameraBtn">Stop Camera</button>
+    </div>
+    <div id="cameraStatus" class="status" style="display:none;"></div><textarea id="cameraText" placeholder="Extracted text will appear here..." readonly></textarea>
+   </div>
+  </div>
+  <div id="uploadModal" class="modal">
+   <div class="modal-content"><button class="close-modal">×</button>
+    <h2>🖼️ Image Upload OCR</h2>
+    <div class="upload-area" id="uploadArea">
+     <p style="font-size: 18px; color: #667eea; margin-bottom: 10px;">📤 Click to upload or drag &amp; drop</p>
+     <p style="color: #999;">Supports: JPG, PNG, GIF</p><input type="file" id="imageUpload" accept="image/*">
+    </div><img id="previewImage" class="preview-image" style="display:none;">
+    <div id="uploadStatus" class="status" style="display:none;"></div><textarea id="uploadText" placeholder="Extracted text will appear here..." readonly></textarea>
+   </div>
+  </div>
+  <div id="textModal" class="modal">
+   <div class="modal-content"><button class="close-modal">×</button>
+    <h2>📝 Enter Text</h2><textarea id="inputText" placeholder="Type or paste your text here..."></textarea>
+    <div class="text-controls"><select id="ttsLanguage"> <option value="en-US">English</option> <option value="te-IN">Telugu</option> <option value="hi-IN">Hindi</option> <option value="ta-IN">Tamil</option> <option value="kn-IN">Kannada</option> </select> <button id="speakBtn">🔊 Speak</button> <button id="stopSpeakBtn">⏹️ Stop</button> <button id="clearTextBtn">🗑️ Clear</button>
+    </div>
+    <div id="textStatus" class="status" style="display:none;"></div>
+   </div>
+  </div>
+  <div id="voiceModal" class="modal">
+   <div class="modal-content"><button class="close-modal">×</button>
+    <h2>🎤 Voice Typing</h2>
+    <div class="text-controls"><select id="voiceLanguage"> <option value="en-US">English</option> <option value="te-IN">Telugu</option> <option value="hi-IN">Hindi</option> <option value="ta-IN">Tamil</option> <option value="kn-IN">Kannada</option> </select> <button id="startVoiceBtn">🎤 Start Recording</button> <button id="stopVoiceBtn" style="display:none;">⏹️ Stop Recording</button> <button id="clearVoiceBtn">🗑️ Clear</button>
+    </div>
+    <div id="voiceStatus" class="status" style="display:none;"></div><textarea id="voiceText" placeholder="Speak and your words will appear here..."></textarea>
+   </div>
+  </div>
+  <div id="translatorModal" class="modal">
+   <div class="modal-content"><button class="close-modal">×</button>
+    <h2>🔄 Translator</h2><textarea id="translatorInput" placeholder="Enter English text to translate..."></textarea>
+    <div class="text-controls"><select id="targetLanguage"> <option value="telugu">Telugu</option> <option value="hindi">Hindi</option> <option value="tamil">Tamil</option> <option value="kannada">Kannada</option> </select> <button id="translateBtn">Translate</button>
+    </div>
+    <div id="translationResult" class="translation-result" style="display:none;">
+     <h3>Translation:</h3>
+     <div class="translated-text" id="translatedText"></div><button id="speakTranslationBtn" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">🔊 Speak Translation</button>
+    </div>
+   </div>
+  </div>
+  <div id="dictionaryModal" class="modal">
+   <div class="modal-content"><button class="close-modal">×</button>
+    <h2>📚 Dictionary</h2><input type="text" class="search-box" id="dictionarySearch" placeholder="Search words or sentences...">
+    <div class="language-tabs"><button class="language-tab active" data-lang="telugu">Telugu</button> <button class="language-tab" data-lang="hindi">Hindi</button> <button class="language-tab" data-lang="tamil">Tamil</button> <button class="language-tab" data-lang="kannada">Kannada</button>
+    </div>
+    <div class="dictionary-container">
+     <div id="dictionaryList" class="dictionary-list"></div>
+    </div>
+   </div>
+  </div>
+  <script>
+        // Dictionary Data (400+ words and sentences)
+        const dictionary = {
+            telugu: {
+                "hello": "హలో",
+                "good morning": "శుభోదయం",
+                "good afternoon": "శుభ మధ్యాహ్నం",
+                "good evening": "శుభ సాయంత్రం",
+                "good night": "శుభ రాత్రి",
+                "thank you": "ధన్యవాదాలు",
+                "welcome": "స్వాగతం",
+                "yes": "అవును",
+                "no": "కాదు",
+                "please": "దయచేసి",
+                "sorry": "క్షమించండి",
+                "excuse me": "క్షమించండి",
+                "how are you": "మీరు ఎలా ఉన్నారు",
+                "i am fine": "నేను బాగున్నాను",
+                "what is your name": "మీ పేరు ఏమిటి",
+                "my name is": "నా పేరు",
+                "where are you from": "మీరు ఎక్కడ నుండి వచ్చారు",
+                "nice to meet you": "మిమ్మల్ని కలవడం ఆనందంగా ఉంది",
+                "goodbye": "వీడ్కోలు",
+                "see you later": "తర్వాత కలుద్దాం",
+                "take care": "జాగ్రత్తగా ఉండండి",
+                "water": "నీరు",
+                "food": "ఆహారం",
+                "house": "ఇల్లు",
+                "family": "కుటుంబం",
+                "father": "తండ్రి",
+                "mother": "తల్లి",
+                "brother": "సోదరుడు",
+                "sister": "సోదరి",
+                "friend": "స్నేహితుడు",
+                "teacher": "ఉపాధ్యాయుడు",
+                "student": "విద్యార్థి",
+                "book": "పుస్తకం",
+                "pen": "పెన్ను",
+                "school": "పాఠశాల",
+                "college": "కళాశాల",
+                "hospital": "ఆసుపత్రి",
+                "doctor": "వైద్యుడు",
+                "nurse": "నర్సు",
+                "medicine": "మందు",
+                "shop": "దుకాణం",
+                "market": "మార్కెట్",
+                "money": "డబ్బు",
+                "work": "పని",
+                "office": "కార్యాలయం",
+                "car": "కారు",
+                "bus": "బస్సు",
+                "train": "రైలు",
+                "airplane": "విమానం",
+                "road": "రోడ్డు",
+                "street": "వీధి",
+                "city": "నగరం",
+                "village": "గ్రామం",
+                "country": "దేశం",
+                "world": "ప్రపంచం",
+                "sun": "సూర్యుడు",
+                "moon": "చంద్రుడు",
+                "star": "నక్షత్రం",
+                "sky": "ఆకాశం",
+                "earth": "భూమి",
+                "tree": "చెట్టు",
+                "flower": "పువ్వు",
+                "fruit": "పండు",
+                "vegetable": "కూరగాయ",
+                "rice": "అన్నం",
+                "bread": "బ్రెడ్",
+                "milk": "పాలు",
+                "tea": "టీ",
+                "coffee": "కాఫీ",
+                "sugar": "చక్కెర",
+                "salt": "ఉప్పు",
+                "one": "ఒకటి",
+                "two": "రెండు",
+                "three": "మూడు",
+                "four": "నాలుగు",
+                "five": "ఐదు",
+                "six": "ఆరు",
+                "seven": "ఏడు",
+                "eight": "ఎనిమిది",
+                "nine": "తొమ్మిది",
+                "ten": "పది",
+                "hundred": "వంద",
+                "thousand": "వేయి",
+                "red": "ఎరుపు",
+                "blue": "నీలం",
+                "green": "ఆకుపచ్చ",
+                "yellow": "పసుపు",
+                "white": "తెలుపు",
+                "black": "నలుపు",
+                "big": "పెద్ద",
+                "small": "చిన్న",
+                "hot": "వేడి",
+                "cold": "చల్లని",
+                "happy": "సంతోషం",
+                "sad": "బాధ",
+                "love": "ప్రేమ",
+                "like": "ఇష్టం",
+                "beautiful": "అందమైన",
+                "good": "మంచి",
+                "bad": "చెడు",
+                "today": "ఈరోజు",
+                "tomorrow": "రేపు",
+                "yesterday": "నిన్న",
+                "morning": "ఉదయం",
+                "afternoon": "మధ్యాహ్నం",
+                "evening": "సాయంత్రం",
+                "night": "రాత్రి",
+                "day": "రోజు",
+                "week": "వారం",
+                "month": "నెల",
+                "year": "సంవత్సరం",
+                "time": "సమయం",
+                "clock": "గడియారం",
+                "hour": "గంట",
+                "minute": "నిమిషం",
+                "second": "సెకను",
+                "eat": "తినడం",
+                "drink": "త్రాగడం",
+                "sleep": "నిద్ర",
+                "walk": "నడవడం",
+                "run": "పరిగెత్తడం",
+                "sit": "కూర్చోవడం",
+                "stand": "నిలబడటం",
+                "read": "చదవడం",
+                "write": "వ్రాయడం",
+                "speak": "మాట్లాడడం",
+                "listen": "వినడం",
+                "see": "చూడడం",
+                "come": "రావడం",
+                "go": "వెళ్ళడం",
+                "give": "ఇవ్వడం",
+                "take": "తీసుకోవడం",
+                "buy": "కొనడం",
+                "sell": "అమ్మడం",
+                "open": "తెరవడం",
+                "close": "మూయడం",
+                "start": "ప్రారంభం",
+                "stop": "ఆగు",
+                "help": "సహాయం",
+                "learn": "నేర్చుకోవడం",
+                "teach": "నేర్పించడం",
+                "understand": "అర్థం చేసుకోవడం",
+                "know": "తెలుసు",
+                "think": "ఆలోచించడం",
+                "remember": "గుర్తుంచుకోవడం",
+                "forget": "మరచిపోవడం",
+                "wait": "వేచి ఉండండి",
+                "hurry": "త్వరపడండి",
+                "slow": "నెమ్మదిగా",
+                "fast": "వేగంగా",
+                "left": "ఎడమ",
+                "right": "కుడి",
+                "up": "పైకి",
+                "down": "క్రిందికి",
+                "inside": "లోపల",
+                "outside": "బయట",
+                "here": "ఇక్కడ",
+                "there": "అక్కడ",
+                "near": "దగ్గర",
+                "far": "దూరం",
+                "before": "ముందు",
+                "after": "తర్వాత",
+                "now": "ఇప్పుడు",
+                "later": "తర్వాత",
+                "always": "ఎల్లప్పుడూ",
+                "never": "ఎప్పుడూ కాదు",
+                "sometimes": "కొన్నిసార్లు",
+                "very": "చాలా",
+                "much": "ఎక్కువ",
+                "little": "కొద్దిగా",
+                "many": "చాలా మంది",
+                "few": "కొన్ని",
+                "all": "అందరూ",
+                "some": "కొన్ని",
+                "none": "ఏదీ లేదు",
+                "i": "నేను",
+                "you": "మీరు",
+                "he": "అతను",
+                "she": "ఆమె",
+                "we": "మేము",
+                "they": "వారు",
+                "this": "ఇది",
+                "that": "అది",
+                "these": "ఇవి",
+                "those": "అవి",
+                "what": "ఏమిటి",
+                "where": "ఎక్కడ",
+                "when": "ఎప్పుడు",
+                "why": "ఎందుకు",
+                "how": "ఎలా",
+                "who": "ఎవరు",
+                "which": "ఏది",
+                "can": "చేయగలను",
+                "cannot": "చేయలేను",
+                "will": "చేస్తాను",
+                "would": "చేసేవాడిని",
+                "should": "చేయాలి",
+                "must": "తప్పక చేయాలి",
+                "may": "చేయవచ్చు",
+                "might": "చేయవచ్చు",
+                "need": "అవసరం",
+                "want": "కావాలి",
+                "like": "ఇష్టం",
+                "wish": "కోరిక",
+                "hope": "ఆశ",
+                "believe": "నమ్ముతాను",
+                "agree": "అంగీకరిస్తాను",
+                "disagree": "అంగీకరించను",
+                "ask": "అడగండి",
+                "answer": "సమాధానం",
+                "question": "ప్రశ్న",
+                "problem": "సమస్య",
+                "solution": "పరిష్కారం",
+                "idea": "ఆలోచన",
+                "plan": "ప్రణాళిక",
+                "goal": "లక్ష్యం",
+                "dream": "కల",
+                "life": "జీవితం",
+                "death": "మరణం",
+                "birth": "జననం",
+                "age": "వయస్సు",
+                "old": "పాత",
+                "new": "కొత్త",
+                "young": "యువ",
+                "child": "పిల్ల",
+                "adult": "పెద్దవారు",
+                "man": "మనిషి",
+                "woman": "స్త్రీ",
+                "boy": "అబ్బాయి",
+                "girl": "అమ్మాయి",
+                "baby": "శిశువు",
+                "husband": "భర్త",
+                "wife": "భార్య",
+                "son": "కొడుకు",
+                "daughter": "కూతురు",
+                "grandfather": "తాత",
+                "grandmother": "అమ్మమ్మ",
+                "uncle": "మామయ్య",
+                "aunt": "అత్త",
+                "cousin": "బంధువు",
+                "neighbor": "పొరుగువారు",
+                "guest": "అతిథి",
+                "host": "ఆతిథ్యదాత",
+                "king": "రాజు",
+                "queen": "రాణి",
+                "prince": "యువరాజు",
+                "princess": "యువరాణి",
+                "god": "దేవుడు",
+                "goddess": "దేవత",
+                "temple": "గుడి",
+                "church": "చర్చి",
+                "mosque": "మసీదు",
+                "prayer": "ప్రార్థన",
+                "festival": "పండుగ",
+                "celebration": "వేడుక",
+                "party": "పార్టీ",
+                "gift": "బహుమతి",
+                "present": "బహుమతి",
+                "surprise": "ఆశ్చర్యం",
+                "joy": "ఆనందం",
+                "peace": "శాంతి",
+                "war": "యుద్ధం",
+                "fight": "పోరాటం",
+                "victory": "విజయం",
+                "defeat": "ఓటమి",
+                "win": "గెలవడం",
+                "lose": "ఓడిపోవడం",
+                "game": "ఆట",
+                "play": "ఆడటం",
+                "sport": "క్రీడ",
+                "music": "సంగీతం",
+                "song": "పాట",
+                "dance": "నృత్యం",
+                "art": "కళ",
+                "painting": "చిత్రం",
+                "picture": "చిత్రం",
+                "photo": "ఫోటో",
+                "camera": "కెమెరా",
+                "phone": "ఫోన్",
+                "mobile": "మొబైల్",
+                "computer": "కంప్యూటర్",
+                "internet": "ఇంటర్నెట్",
+                "email": "ఇమెయిల్",
+                "message": "సందేశం",
+                "letter": "ఉత్తరం",
+                "paper": "కాగితం",
+                "pencil": "పెన్సిల్",
+                "eraser": "రబ్బర్",
+                "ruler": "రూలర్",
+                "bag": "సంచి",
+                "box": "పెట్టె",
+                "bottle": "బాటిల్",
+                "cup": "కప్పు",
+                "plate": "ప్లేట్",
+                "spoon": "చెంచా",
+                "fork": "ఫోర్క్",
+                "knife": "కత్తి",
+                "table": "టేబుల్",
+                "chair": "కుర్చీ",
+                "bed": "మంచం",
+                "pillow": "దిండు",
+                "blanket": "దుప్పటి",
+                "door": "తలుపు",
+                "window": "కిటికీ",
+                "wall": "గోడ",
+                "roof": "పైకప్పు",
+                "floor": "నేల",
+                "room": "గది",
+                "kitchen": "వంటగది",
+                "bathroom": "స్నానపు గది",
+                "garden": "తోట",
+                "park": "పార్క్",
+                "forest": "అడవి",
+                "mountain": "పర్వతం",
+                "river": "నది",
+                "lake": "సరస్సు",
+                "sea": "సముద్రం",
+                "ocean": "మహాసముద్రం",
+                "beach": "బీచ్",
+                "island": "ద్వీపం",
+                "bridge": "వంతెన",
+                "building": "భవనం",
+                "tower": "టవర్",
+                "statue": "విగ్రహం",
+                "monument": "స్మారక చిహ్నం",
+                "museum": "మ్యూజియం",
+                "library": "గ్రంథాలయం",
+                "bank": "బ్యాంకు",
+                "post office": "పోస్ట్ ఆఫీస్",
+                "police station": "పోలీస్ స్టేషన్",
+                "fire station": "అగ్నిమాపక కేంద్రం",
+                "airport": "విమానాశ్రయం",
+                "station": "స్టేషన్",
+                "ticket": "టికెట్",
+                "passport": "పాస్పోర్ట్",
+                "visa": "వీసా",
+                "travel": "ప్రయాణం",
+                "journey": "యాత్ర",
+                "vacation": "సెలవు",
+                "holiday": "సెలవు దినం",
+                "trip": "యాత్ర",
+                "tour": "టూర్",
+                "hotel": "హోటల్",
+                "restaurant": "రెస్టారెంట్",
+                "menu": "మెను",
+                "order": "ఆర్డర్",
+                "bill": "బిల్లు",
+                "price": "ధర",
+                "cost": "ఖర్చు",
+                "cheap": "చౌక",
+                "expensive": "ఖరీదైన",
+                "free": "ఉచితం",
+                "discount": "డిస్కౌంట్",
+                "sale": "అమ్మకం",
+                "shopping": "షాపింగ్",
+                "customer": "కస్టమర్",
+                "service": "సేవ",
+                "quality": "నాణ్యత",
+                "quantity": "పరిమాణం",
+                "size": "పరిమాణం",
+                "color": "రంగు",
+                "shape": "ఆకారం",
+                "length": "పొడవు",
+                "width": "వెడల్పు",
+                "height": "ఎత్తు",
+                "weight": "బరువు",
+                "light": "తేలికైన",
+                "heavy": "భారీ",
+                "strong": "బలమైన",
+                "weak": "బలహీనమైన",
+                "hard": "కఠినమైన",
+                "soft": "మృదువైన",
+                "smooth": "మృదువైన",
+                "rough": "కఠినమైన",
+                "clean": "శుభ్రమైన",
+                "dirty": "మురికి",
+                "dry": "పొడి",
+                "wet": "తడి",
+                "full": "నిండా",
+                "empty": "ఖాళీ",
+                "open": "తెరవబడిన",
+                "closed": "మూసివేయబడిన",
+                "right": "సరైన",
+                "wrong": "తప్పు",
+                "correct": "సరైన",
+                "incorrect": "సరికాని",
+                "true": "నిజం",
+                "false": "అబద్ధం",
+                "real": "నిజమైన",
+                "fake": "నకిలీ",
+                "natural": "సహజమైన",
+                "artificial": "కృత్రిమమైన",
+                "important": "ముఖ్యమైన",
+                "necessary": "అవసరమైన",
+                "useful": "ఉపయోగకరమైన",
+                "useless": "పనికిరాని",
+                "possible": "సాధ్యమైన",
+                "impossible": "అసాధ్యమైన",
+                "easy": "సులభమైన",
+                "difficult": "కష్టమైన",
+                "simple": "సరళమైన",
+                "complex": "సంక్లిష్టమైన",
+                "safe": "సురక్షితమైన",
+                "dangerous": "ప్రమాదకరమైన",
+                "careful": "జాగ్రత్తగా",
+                "careless": "అజాగ్రత్తగా"
+            },
+            hindi: {
+                "hello": "नमस्ते",
+                "good morning": "सुप्रभात",
+                "good afternoon": "शुभ दोपहर",
+                "good evening": "शुभ संध्या",
+                "good night": "शुभ रात्रि",
+                "thank you": "धन्यवाद",
+                "welcome": "स्वागत",
+                "yes": "हाँ",
+                "no": "नहीं",
+                "please": "कृपया",
+                "sorry": "क्षमा करें",
+                "excuse me": "क्षमा करें",
+                "how are you": "आप कैसे हैं",
+                "i am fine": "मैं ठीक हूँ",
+                "what is your name": "आपका नाम क्या है",
+                "my name is": "मेरा नाम है",
+                "where are you from": "आप कहाँ से हैं",
+                "nice to meet you": "आपसे मिलकर खुशी हुई",
+                "goodbye": "अलविदा",
+                "see you later": "बाद में मिलते हैं",
+                "take care": "ध्यान रखना",
+                "water": "पानी",
+                "food": "खाना",
+                "house": "घर",
+                "family": "परिवार",
+                "father": "पिता",
+                "mother": "माता",
+                "brother": "भाई",
+                "sister": "बहन",
+                "friend": "दोस्त",
+                "teacher": "शिक्षक",
+                "student": "छात्र",
+                "book": "किताब",
+                "pen": "कलम",
+                "school": "स्कूल",
+                "college": "कॉलेज",
+                "hospital": "अस्पताल",
+                "doctor": "डॉक्टर",
+                "nurse": "नर्स",
+                "medicine": "दवा",
+                "shop": "दुकान",
+                "market": "बाज़ार",
+                "money": "पैसा",
+                "work": "काम",
+                "office": "कार्यालय",
+                "car": "कार",
+                "bus": "बस",
+                "train": "रेलगाड़ी",
+                "airplane": "हवाई जहाज",
+                "road": "सड़क",
+                "street": "गली",
+                "city": "शहर",
+                "village": "गाँव",
+                "country": "देश",
+                "world": "दुनिया",
+                "sun": "सूरज",
+                "moon": "चाँद",
+                "star": "तारा",
+                "sky": "आकाश",
+                "earth": "पृथ्वी",
+                "tree": "पेड़",
+                "flower": "फूल",
+                "fruit": "फल",
+                "vegetable": "सब्जी",
+                "rice": "चावल",
+                "bread": "रोटी",
+                "milk": "दूध",
+                "tea": "चाय",
+                "coffee": "कॉफी",
+                "sugar": "चीनी",
+                "salt": "नमक",
+                "one": "एक",
+                "two": "दो",
+                "three": "तीन",
+                "four": "चार",
+                "five": "पांच",
+                "six": "छह",
+                "seven": "सात",
+                "eight": "आठ",
+                "nine": "नौ",
+                "ten": "दस",
+                "hundred": "सौ",
+                "thousand": "हज़ार",
+                "red": "लाल",
+                "blue": "नीला",
+                "green": "हरा",
+                "yellow": "पीला",
+                "white": "सफेद",
+                "black": "काला",
+                "big": "बड़ा",
+                "small": "छोटा",
+                "hot": "गर्म",
+                "cold": "ठंडा",
+                "happy": "खुश",
+                "sad": "उदास",
+                "love": "प्यार",
+                "like": "पसंद",
+                "beautiful": "सुंदर",
+                "good": "अच्छा",
+                "bad": "बुरा",
+                "today": "आज",
+                "tomorrow": "कल",
+                "yesterday": "कल",
+                "morning": "सुबह",
+                "afternoon": "दोपहर",
+                "evening": "शाम",
+                "night": "रात",
+                "day": "दिन",
+                "week": "सप्ताह",
+                "month": "महीना",
+                "year": "साल",
+                "time": "समय",
+                "clock": "घड़ी",
+                "hour": "घंटा",
+                "minute": "मिनट",
+                "second": "सेकंड",
+                "eat": "खाना",
+                "drink": "पीना",
+                "sleep": "सोना",
+                "walk": "चलना",
+                "run": "दौड़ना",
+                "sit": "बैठना",
+                "stand": "खड़ा होना",
+                "read": "पढ़ना",
+                "write": "लिखना",
+                "speak": "बोलना",
+                "listen": "सुनना",
+                "see": "देखना",
+                "come": "आना",
+                "go": "जाना",
+                "give": "देना",
+                "take": "लेना",
+                "buy": "खरीदना",
+                "sell": "बेचना",
+                "open": "खोलना",
+                "close": "बंद करना",
+                "start": "शुरू करना",
+                "stop": "रुकना",
+                "help": "मदद",
+                "learn": "सीखना",
+                "teach": "सिखाना",
+                "understand": "समझना",
+                "know": "जानना",
+                "think": "सोचना",
+                "remember": "याद रखना",
+                "forget": "भूलना",
+                "wait": "इंतज़ार करना",
+                "hurry": "जल्दी करना",
+                "slow": "धीमा",
+                "fast": "तेज़",
+                "left": "बाएं",
+                "right": "दाएं",
+                "up": "ऊपर",
+                "down": "नीचे",
+                "inside": "अंदर",
+                "outside": "बाहर",
+                "here": "यहाँ",
+                "there": "वहाँ",
+                "near": "पास",
+                "far": "दूर",
+                "before": "पहले",
+                "after": "बाद में",
+                "now": "अब",
+                "later": "बाद में",
+                "always": "हमेशा",
+                "never": "कभी नहीं",
+                "sometimes": "कभी-कभी",
+                "very": "बहुत",
+                "much": "बहुत",
+                "little": "थोड़ा",
+                "many": "बहुत सारे",
+                "few": "कुछ",
+                "all": "सब",
+                "some": "कुछ",
+                "none": "कोई नहीं",
+                "i": "मैं",
+                "you": "आप",
+                "he": "वह",
+                "she": "वह",
+                "we": "हम",
+                "they": "वे",
+                "this": "यह",
+                "that": "वह",
+                "these": "ये",
+                "those": "वे",
+                "what": "क्या",
+                "where": "कहाँ",
+                "when": "कब",
+                "why": "क्यों",
+                "how": "कैसे",
+                "who": "कौन",
+                "which": "कौन सा",
+                "can": "सकता है",
+                "cannot": "नहीं सकता",
+                "will": "करेंगे",
+                "would": "करेंगे",
+                "should": "चाहिए",
+                "must": "ज़रूर",
+                "may": "शायद",
+                "might": "शायद",
+                "need": "ज़रूरत",
+                "want": "चाहना",
+                "like": "पसंद",
+                "wish": "इच्छा",
+                "hope": "आशा",
+                "believe": "विश्वास करना",
+                "agree": "सहमत होना",
+                "disagree": "असहमत होना",
+                "ask": "पूछना",
+                "answer": "जवाब",
+                "question": "सवाल",
+                "problem": "समस्या",
+                "solution": "समाधान",
+                "idea": "विचार",
+                "plan": "योजना",
+                "goal": "लक्ष्य",
+                "dream": "सपना",
+                "life": "जीवन",
+                "death": "मृत्यु",
+                "birth": "जन्म",
+                "age": "उम्र",
+                "old": "पुराना",
+                "new": "नया",
+                "young": "युवा",
+                "child": "बच्चा",
+                "adult": "वयस्क",
+                "man": "आदमी",
+                "woman": "औरत",
+                "boy": "लड़का",
+                "girl": "लड़की",
+                "baby": "शिशु",
+                "husband": "पति",
+                "wife": "पत्नी",
+                "son": "बेटा",
+                "daughter": "बेटी",
+                "grandfather": "दादा",
+                "grandmother": "दादी",
+                "uncle": "चाचा",
+                "aunt": "चाची",
+                "cousin": "चचेरा भाई",
+                "neighbor": "पड़ोसी",
+                "guest": "मेहमान",
+                "host": "मेज़बान",
+                "king": "राजा",
+                "queen": "रानी",
+                "prince": "राजकुमार",
+                "princess": "राजकुमारी",
+                "god": "भगवान",
+                "goddess": "देवी",
+                "temple": "मंदिर",
+                "church": "गिरजाघर",
+                "mosque": "मस्जिद",
+                "prayer": "प्रार्थना",
+                "festival": "त्योहार",
+                "celebration": "उत्सव",
+                "party": "पार्टी",
+                "gift": "उपहार",
+                "present": "उपहार",
+                "surprise": "आश्चर्य",
+                "joy": "खुशी",
+                "peace": "शांति",
+                "war": "युद्ध",
+                "fight": "लड़ाई",
+                "victory": "जीत",
+                "defeat": "हार",
+                "win": "जीतना",
+                "lose": "हारना",
+                "game": "खेल",
+                "play": "खेलना",
+                "sport": "खेल",
+                "music": "संगीत",
+                "song": "गाना",
+                "dance": "नृत्य",
+                "art": "कला",
+                "painting": "चित्र",
+                "picture": "तस्वीर",
+                "photo": "फोटो",
+                "camera": "कैमरा",
+                "phone": "फोन",
+                "mobile": "मोबाइल",
+                "computer": "कंप्यूटर",
+                "internet": "इंटरनेट",
+                "email": "ईमेल",
+                "message": "संदेश",
+                "letter": "पत्र",
+                "paper": "कागज़",
+                "pencil": "पेंसिल",
+                "eraser": "रबर",
+                "ruler": "पैमाना",
+                "bag": "बैग",
+                "box": "डिब्बा",
+                "bottle": "बोतल",
+                "cup": "कप",
+                "plate": "प्लेट",
+                "spoon": "चम्मच",
+                "fork": "काँटा",
+                "knife": "चाकू",
+                "table": "मेज़",
+                "chair": "कुर्सी",
+                "bed": "बिस्तर",
+                "pillow": "तकिया",
+                "blanket": "कंबल",
+                "door": "दरवाज़ा",
+                "window": "खिड़की",
+                "wall": "दीवार",
+                "roof": "छत",
+                "floor": "फर्श",
+                "room": "कमरा",
+                "kitchen": "रसोई",
+                "bathroom": "बाथरूम",
+                "garden": "बगीचा",
+                "park": "पार्क",
+                "forest": "जंगल",
+                "mountain": "पहाड़",
+                "river": "नदी",
+                "lake": "झील",
+                "sea": "समुद्र",
+                "ocean": "महासागर",
+                "beach": "समुद्र तट",
+                "island": "द्वीप",
+                "bridge": "पुल",
+                "building": "इमारत",
+                "tower": "टॉवर",
+                "statue": "मूर्ति",
+                "monument": "स्मारक",
+                "museum": "संग्रहालय",
+                "library": "पुस्तकालय",
+                "bank": "बैंक",
+                "post office": "डाकघर",
+                "police station": "पुलिस स्टेशन",
+                "fire station": "फायर स्टेशन",
+                "airport": "हवाई अड्डा",
+                "station": "स्टेशन",
+                "ticket": "टिकट",
+                "passport": "पासपोर्ट",
+                "visa": "वीज़ा",
+                "travel": "यात्रा",
+                "journey": "यात्रा",
+                "vacation": "छुट्टी",
+                "holiday": "छुट्टी",
+                "trip": "यात्रा",
+                "tour": "दौरा",
+                "hotel": "होटल",
+                "restaurant": "रेस्तरां",
+                "menu": "मेनू",
+                "order": "ऑर्डर",
+                "bill": "बिल",
+                "price": "कीमत",
+                "cost": "लागत",
+                "cheap": "सस्ता",
+                "expensive": "महंगा",
+                "free": "मुफ्त",
+                "discount": "छूट",
+                "sale": "बिक्री",
+                "shopping": "खरीदारी",
+                "customer": "ग्राहक",
+                "service": "सेवा",
+                "quality": "गुणवत्ता",
+                "quantity": "मात्रा",
+                "size": "आकार",
+                "color": "रंग",
+                "shape": "आकार",
+                "length": "लंबाई",
+                "width": "चौड़ाई",
+                "height": "ऊंचाई",
+                "weight": "वजन",
+                "light": "हल्का",
+                "heavy": "भारी",
+                "strong": "मजबूत",
+                "weak": "कमज़ोर",
+                "hard": "कठिन",
+                "soft": "नरम",
+                "smooth": "चिकना",
+                "rough": "खुरदरा",
+                "clean": "साफ",
+                "dirty": "गंदा",
+                "dry": "सूखा",
+                "wet": "गीला",
+                "full": "भरा हुआ",
+                "empty": "खाली",
+                "open": "खुला",
+                "closed": "बंद",
+                "right": "सही",
+                "wrong": "गलत",
+                "correct": "सही",
+                "incorrect": "गलत",
+                "true": "सच",
+                "false": "झूठ",
+                "real": "असली",
+                "fake": "नकली",
+                "natural": "प्राकृतिक",
+                "artificial": "कृत्रिम",
+                "important": "महत्वपूर्ण",
+                "necessary": "ज़रूरी",
+                "useful": "उपयोगी",
+                "useless": "बेकार",
+                "possible": "संभव",
+                "impossible": "असंभव",
+                "easy": "आसान",
+                "difficult": "कठिन",
+                "simple": "सरल",
+                "complex": "जटिल",
+                "safe": "सुरक्षित",
+                "dangerous": "खतरनाक",
+                "careful": "सावधान",
+                "careless": "लापरवाह"
+            },
+            tamil: {
+                "hello": "வணக்கம்",
+                "good morning": "காலை வணக்கம்",
+                "good afternoon": "மதிய வணக்கம்",
+                "good evening": "மாலை வணக்கம்",
+                "good night": "இரவு வணக்கம்",
+                "thank you": "நன்றி",
+                "welcome": "வரவேற்பு",
+                "yes": "ஆம்",
+                "no": "இல்லை",
+                "please": "தயவுசெய்து",
+                "sorry": "மன்னிக்கவும்",
+                "excuse me": "மன்னிக்கவும்",
+                "how are you": "எப்படி இருக்கிறீர்கள்",
+                "i am fine": "நான் நன்றாக இருக்கிறேன்",
+                "what is your name": "உங்கள் பெயர் என்ன",
+                "my name is": "என் பெயர்",
+                "where are you from": "நீங்கள் எங்கிருந்து வருகிறீர்கள்",
+                "nice to meet you": "உங்களை சந்தித்ததில் மகிழ்ச்சி",
+                "goodbye": "விடைபெறுகிறேன்",
+                "see you later": "பிறகு சந்திப்போம்",
+                "take care": "கவனமாக இருங்கள்",
+                "water": "தண்ணீர்",
+                "food": "உணவு",
+                "house": "வீடு",
+                "family": "குடும்பம்",
+                "father": "தந்தை",
+                "mother": "தாய்",
+                "brother": "சகோதரன்",
+                "sister": "சகோதரி",
+                "friend": "நண்பர்",
+                "teacher": "ஆசிரியர்",
+                "student": "மாணவர்",
+                "book": "புத்தகம்",
+                "pen": "பேனா",
+                "school": "பள்ளி",
+                "college": "கல்லூரி",
+                "hospital": "மருத்துவமனை",
+                "doctor": "மருத்துவர்",
+                "nurse": "செவிலியர்",
+                "medicine": "மருந்து",
+                "shop": "கடை",
+                "market": "சந்தை",
+                "money": "பணம்",
+                "work": "வேலை",
+                "office": "அலுவலகம்",
+                "car": "கார்",
+                "bus": "பேருந்து",
+                "train": "ரயில்",
+                "airplane": "விமானம்",
+                "road": "சாலை",
+                "street": "தெரு",
+                "city": "நகரம்",
+                "village": "கிராமம்",
+                "country": "நாடு",
+                "world": "உலகம்",
+                "sun": "சூரியன்",
+                "moon": "சந்திரன்",
+                "star": "நட்சத்திரம்",
+                "sky": "வானம்",
+                "earth": "பூமி",
+                "tree": "மரம்",
+                "flower": "பூ",
+                "fruit": "பழம்",
+                "vegetable": "காய்கறி",
+                "rice": "அரிசி",
+                "bread": "ரொட்டி",
+                "milk": "பால்",
+                "tea": "தேநீர்",
+                "coffee": "காபி",
+                "sugar": "சர்க்கரை",
+                "salt": "உப்பு",
+                "one": "ஒன்று",
+                "two": "இரண்டு",
+                "three": "மூன்று",
+                "four": "நான்கு",
+                "five": "ஐந்து",
+                "six": "ஆறு",
+                "seven": "ஏழு",
+                "eight": "எட்டு",
+                "nine": "ஒன்பது",
+                "ten": "பத்து",
+                "hundred": "நூறு",
+                "thousand": "ஆயிரம்",
+                "red": "சிவப்பு",
+                "blue": "நீலம்",
+                "green": "பச்சை",
+                "yellow": "மஞ்சள்",
+                "white": "வெள்ளை",
+                "black": "கருப்பு",
+                "big": "பெரிய",
+                "small": "சிறிய",
+                "hot": "சூடான",
+                "cold": "குளிர்",
+                "happy": "மகிழ்ச்சி",
+                "sad": "வருத்தம்",
+                "love": "அன்பு",
+                "like": "விருப்பம்",
+                "beautiful": "அழகான",
+                "good": "நல்ல",
+                "bad": "மோசமான",
+                "today": "இன்று",
+                "tomorrow": "நாளை",
+                "yesterday": "நேற்று",
+                "morning": "காலை",
+                "afternoon": "மதியம்",
+                "evening": "மாலை",
+                "night": "இரவு",
+                "day": "நாள்",
+                "week": "வாரம்",
+                "month": "மாதம்",
+                "year": "வருடம்",
+                "time": "நேரம்",
+                "clock": "கடிகாரம்",
+                "hour": "மணி",
+                "minute": "நிமிடம்",
+                "second": "விநாடி",
+                "eat": "சாப்பிடு",
+                "drink": "குடி",
+                "sleep": "தூங்கு",
+                "walk": "நட",
+                "run": "ஓடு",
+                "sit": "உட்கார்",
+                "stand": "நில்",
+                "read": "படி",
+                "write": "எழுது",
+                "speak": "பேசு",
+                "listen": "கேள்",
+                "see": "பார்",
+                "come": "வா",
+                "go": "போ",
+                "give": "கொடு",
+                "take": "எடு",
+                "buy": "வாங்கு",
+                "sell": "விற்று",
+                "open": "திற",
+                "close": "மூடு",
+                "start": "தொடங்கு",
+                "stop": "நிறுத்து",
+                "help": "உதவி",
+                "learn": "கற்று",
+                "teach": "கற்பி",
+                "understand": "புரிந்து கொள்",
+                "know": "தெரியும்",
+                "think": "நினை",
+                "remember": "நினைவில் கொள்",
+                "forget": "மறந்து விடு",
+                "wait": "காத்திரு",
+                "hurry": "அவசரப்படு",
+                "slow": "மெதுவாக",
+                "fast": "வேகமாக",
+                "left": "இடது",
+                "right": "வலது",
+                "up": "மேலே",
+                "down": "கீழே",
+                "inside": "உள்ளே",
+                "outside": "வெளியே",
+                "here": "இங்கே",
+                "there": "அங்கே",
+                "near": "அருகில்",
+                "far": "தூரம்",
+                "before": "முன்",
+                "after": "பின்",
+                "now": "இப்போது",
+                "later": "பின்னர்",
+                "always": "எப்போதும்",
+                "never": "ஒருபோதும்",
+                "sometimes": "சில நேரங்களில்",
+                "very": "மிகவும்",
+                "much": "அதிகம்",
+                "little": "சிறிது",
+                "many": "பல",
+                "few": "சில",
+                "all": "அனைத்தும்",
+                "some": "சில",
+                "none": "எதுவும் இல்லை",
+                "i": "நான்",
+                "you": "நீங்கள்",
+                "he": "அவன்",
+                "she": "அவள்",
+                "we": "நாங்கள்",
+                "they": "அவர்கள்",
+                "this": "இது",
+                "that": "அது",
+                "these": "இவை",
+                "those": "அவை",
+                "what": "என்ன",
+                "where": "எங்கே",
+                "when": "எப்போது",
+                "why": "ஏன்",
+                "how": "எப்படி",
+                "who": "யார்",
+                "which": "எது",
+                "can": "முடியும்",
+                "cannot": "முடியாது",
+                "will": "செய்வேன்",
+                "would": "செய்வேன்",
+                "should": "வேண்டும்",
+                "must": "கண்டிப்பாக",
+                "may": "கூடும்",
+                "might": "கூடும்",
+                "need": "தேவை",
+                "want": "வேண்டும்",
+                "like": "விரும்பு",
+                "wish": "விருப்பம்",
+                "hope": "நம்பிக்கை",
+                "believe": "நம்பு",
+                "agree": "ஒப்புக்கொள்",
+                "disagree": "மறுக்க",
+                "ask": "கேள்",
+                "answer": "பதில்",
+                "question": "கேள்வி",
+                "problem": "பிரச்சனை",
+                "solution": "தீர்வு",
+                "idea": "யோசனை",
+                "plan": "திட்டம்",
+                "goal": "இலக்கு",
+                "dream": "கனவு",
+                "life": "வாழ்க்கை",
+                "death": "மரணம்",
+                "birth": "பிறப்பு",
+                "age": "வயது",
+                "old": "பழைய",
+                "new": "புதிய",
+                "young": "இளம்",
+                "child": "குழந்தை",
+                "adult": "பெரியவர்",
+                "man": "மனிதன்",
+                "woman": "பெண்",
+                "boy": "சிறுவன்",
+                "girl": "சிறுமி",
+                "baby": "குழந்தை",
+                "husband": "கணவர்",
+                "wife": "மனைவி",
+                "son": "மகன்",
+                "daughter": "மகள்",
+                "grandfather": "தாத்தா",
+                "grandmother": "பாட்டி",
+                "uncle": "மாமா",
+                "aunt": "அத்தை",
+                "cousin": "உறவினர்",
+                "neighbor": "அண்டை வீட்டார்",
+                "guest": "விருந்தினர்",
+                "host": "புரவலன்",
+                "king": "அரசன்",
+                "queen": "அரசி",
+                "prince": "இளவரசன்",
+                "princess": "இளவரசி",
+                "god": "கடவுள்",
+                "goddess": "தேவி",
+                "temple": "கோவில்",
+                "church": "தேவாலயம்",
+                "mosque": "மசூதி",
+                "prayer": "பிரார்த்தனை",
+                "festival": "திருவிழா",
+                "celebration": "கொண்டாட்டம்",
+                "party": "விருந்து",
+                "gift": "பரிசு",
+                "present": "பரிசு",
+                "surprise": "ஆச்சரியம்",
+                "joy": "மகிழ்ச்சி",
+                "peace": "அமைதி",
+                "war": "போர்",
+                "fight": "சண்டை",
+                "victory": "வெற்றி",
+                "defeat": "தோல்வி",
+                "win": "வெல்லு",
+                "lose": "தோல்",
+                "game": "விளையாட்டு",
+                "play": "விளையாடு",
+                "sport": "விளையாட்டு",
+                "music": "இசை",
+                "song": "பாடல்",
+                "dance": "நடனம்",
+                "art": "கலை",
+                "painting": "ஓவியம்",
+                "picture": "படம்",
+                "photo": "புகைப்படம்",
+                "camera": "கேமரா",
+                "phone": "தொலைபேசி",
+                "mobile": "செல்பேசி",
+                "computer": "கணினி",
+                "internet": "இணையம்",
+                "email": "மின்னஞ்சல்",
+                "message": "செய்தி",
+                "letter": "கடிதம்",
+                "paper": "காகிதம்",
+                "pencil": "பென்சில்",
+                "eraser": "அழிப்பான்",
+                "ruler": "அளவுகோல்",
+                "bag": "பை",
+                "box": "பெட்டி",
+                "bottle": "பாட்டில்",
+                "cup": "கோப்பை",
+                "plate": "தட்டு",
+                "spoon": "கரண்டி",
+                "fork": "முள்கரண்டி",
+                "knife": "கத்தி",
+                "table": "மேசை",
+                "chair": "நாற்காலி",
+                "bed": "படுக்கை",
+                "pillow": "தலையணை",
+                "blanket": "போர்வை",
+                "door": "கதவு",
+                "window": "ஜன்னல்",
+                "wall": "சுவர்",
+                "roof": "கூரை",
+                "floor": "தளம்",
+                "room": "அறை",
+                "kitchen": "சமையலறை",
+                "bathroom": "குளியலறை",
+                "garden": "தோட்டம்",
+                "park": "பூங்கா",
+                "forest": "காடு",
+                "mountain": "மலை",
+                "river": "ஆறு",
+                "lake": "ஏரி",
+                "sea": "கடல்",
+                "ocean": "பெருங்கடல்",
+                "beach": "கடற்கரை",
+                "island": "தீவு",
+                "bridge": "பாலம்",
+                "building": "கட்டிடம்",
+                "tower": "கோபுரம்",
+                "statue": "சிலை",
+                "monument": "நினைவுச்சின்னம்",
+                "museum": "அருங்காட்சியகம்",
+                "library": "நூலகம்",
+                "bank": "வங்கி",
+                "post office": "தபால் அலுவலகம்",
+                "police station": "காவல் நிலையம்",
+                "fire station": "தீயணைப்பு நிலையம்",
+                "airport": "விமான நிலையம்",
+                "station": "நிலையம்",
+                "ticket": "சீட்டு",
+                "passport": "பாஸ்போர்ட்",
+                "visa": "விசா",
+                "travel": "பயணம்",
+                "journey": "பயணம்",
+                "vacation": "விடுமுறை",
+                "holiday": "விடுமுறை",
+                "trip": "பயணம்",
+                "tour": "சுற்றுலா",
+                "hotel": "விடுதி",
+                "restaurant": "உணவகம்",
+                "menu": "பட்டியல்",
+                "order": "ஆர்டர்",
+                "bill": "பில்",
+                "price": "விலை",
+                "cost": "செலவு",
+                "cheap": "மலிவான",
+                "expensive": "விலை உயர்ந்த",
+                "free": "இலவசம்",
+                "discount": "தள்ளுபடி",
+                "sale": "விற்பனை",
+                "shopping": "கொள்முதல்",
+                "customer": "வாடிக்கையாளர்",
+                "service": "சேவை",
+                "quality": "தரம்",
+                "quantity": "அளவு",
+                "size": "அளவு",
+                "color": "நிறம்",
+                "shape": "வடிவம்",
+                "length": "நீளம்",
+                "width": "அகலம்",
+                "height": "உயரம்",
+                "weight": "எடை",
+                "light": "இலகுவான",
+                "heavy": "கனமான",
+                "strong": "வலுவான",
+                "weak": "பலவீனமான",
+                "hard": "கடினமான",
+                "soft": "மென்மையான",
+                "smooth": "மென்மையான",
+                "rough": "கடினமான",
+                "clean": "சுத்தமான",
+                "dirty": "அழுக்கான",
+                "dry": "உலர்ந்த",
+                "wet": "ஈரமான",
+                "full": "நிரம்பிய",
+                "empty": "காலியான",
+                "open": "திறந்த",
+                "closed": "மூடிய",
+                "right": "சரியான",
+                "wrong": "தவறான",
+                "correct": "சரியான",
+                "incorrect": "தவறான",
+                "true": "உண்மை",
+                "false": "பொய்",
+                "real": "உண்மையான",
+                "fake": "போலியான",
+                "natural": "இயற்கையான",
+                "artificial": "செயற்கையான",
+                "important": "முக்கியமான",
+                "necessary": "அவசியமான",
+                "useful": "பயனுள்ள",
+                "useless": "பயனற்ற",
+                "possible": "சாத்தியமான",
+                "impossible": "சாத்தியமற்ற",
+                "easy": "எளிதான",
+                "difficult": "கடினமான",
+                "simple": "எளிமையான",
+                "complex": "சிக்கலான",
+                "safe": "பாதுகாப்பான",
+                "dangerous": "ஆபத்தான",
+                "careful": "கவனமாக",
+                "careless": "கவனக்குறைவான"
+            },
+            kannada: {
+                "hello": "ನಮಸ್ಕಾರ",
+                "good morning": "ಶುಭೋದಯ",
+                "good afternoon": "ಶುಭ ಮಧ್ಯಾಹ್ನ",
+                "good evening": "ಶುಭ ಸಂಜೆ",
+                "good night": "ಶುಭ ರಾತ್ರಿ",
+                "thank you": "ಧನ್ಯವಾದಗಳು",
+                "welcome": "ಸ್ವಾಗತ",
+                "yes": "ಹೌದು",
+                "no": "ಇಲ್ಲ",
+                "please": "ದಯವಿಟ್ಟು",
+                "sorry": "ಕ್ಷಮಿಸಿ",
+                "excuse me": "ಕ್ಷಮಿಸಿ",
+                "how are you": "ನೀವು ಹೇಗಿದ್ದೀರಿ",
+                "i am fine": "ನಾನು ಚೆನ್ನಾಗಿದ್ದೇನೆ",
+                "what is your name": "ನಿಮ್ಮ ಹೆಸರೇನು",
+                "my name is": "ನನ್ನ ಹೆಸರು",
+                "where are you from": "ನೀವು ಎಲ್ಲಿಂದ ಬಂದಿದ್ದೀರಿ",
+                "nice to meet you": "ನಿಮ್ಮನ್ನು ಭೇಟಿಯಾಗಿ ಸಂತೋಷವಾಯಿತು",
+                "goodbye": "ವಿದಾಯ",
+                "see you later": "ನಂತರ ಭೇಟಿಯಾಗೋಣ",
+                "take care": "ಜಾಗರೂಕರಾಗಿರಿ",
+                "water": "ನೀರು",
+                "food": "ಆಹಾರ",
+                "house": "ಮನೆ",
+                "family": "ಕುಟುಂಬ",
+                "father": "ತಂದೆ",
+                "mother": "ತಾಯಿ",
+                "brother": "ಸಹೋದರ",
+                "sister": "ಸಹೋದರಿ",
+                "friend": "ಸ್ನೇಹಿತ",
+                "teacher": "ಶಿಕ್ಷಕ",
+                "student": "ವಿದ್ಯಾರ್ಥಿ",
+                "book": "ಪುಸ್ತಕ",
+                "pen": "ಪೆನ್",
+                "school": "ಶಾಲೆ",
+                "college": "ಕಾಲೇಜು",
+                "hospital": "ಆಸ್ಪತ್ರೆ",
+                "doctor": "ವೈದ್ಯ",
+                "nurse": "ನರ್ಸ್",
+                "medicine": "ಔಷಧ",
+                "shop": "ಅಂಗಡಿ",
+                "market": "ಮಾರುಕಟ್ಟೆ",
+                "money": "ಹಣ",
+                "work": "ಕೆಲಸ",
+                "office": "ಕಚೇರಿ",
+                "car": "ಕಾರು",
+                "bus": "ಬಸ್",
+                "train": "ರೈಲು",
+                "airplane": "ವಿಮಾನ",
+                "road": "ರಸ್ತೆ",
+                "street": "ಬೀದಿ",
+                "city": "ನಗರ",
+                "village": "ಗ್ರಾಮ",
+                "country": "ದೇಶ",
+                "world": "ಪ್ರಪಂಚ",
+                "sun": "ಸೂರ್ಯ",
+                "moon": "ಚಂದ್ರ",
+                "star": "ನಕ್ಷತ್ರ",
+                "sky": "ಆಕಾಶ",
+                "earth": "ಭೂಮಿ",
+                "tree": "ಮರ",
+                "flower": "ಹೂವು",
+                "fruit": "ಹಣ್ಣು",
+                "vegetable": "ತರಕಾರಿ",
+                "rice": "ಅನ್ನ",
+                "bread": "ರೊಟ್ಟಿ",
+                "milk": "ಹಾಲು",
+                "tea": "ಚಹಾ",
+                "coffee": "ಕಾಫಿ",
+                "sugar": "ಸಕ್ಕರೆ",
+                "salt": "ಉಪ್ಪು",
+                "one": "ಒಂದು",
+                "two": "ಎರಡು",
+                "three": "ಮೂರು",
+                "four": "ನಾಲ್ಕು",
+                "five": "ಐದು",
+                "six": "ಆರು",
+                "seven": "ಏಳು",
+                "eight": "ಎಂಟು",
+                "nine": "ಒಂಬತ್ತು",
+                "ten": "ಹತ್ತು",
+                "hundred": "ನೂರು",
+                "thousand": "ಸಾವಿರ",
+                "red": "ಕೆಂಪು",
+                "blue": "ನೀಲಿ",
+                "green": "ಹಸಿರು",
+                "yellow": "ಹಳದಿ",
+                "white": "ಬಿಳಿ",
+                "black": "ಕಪ್ಪು",
+                "big": "ದೊಡ್ಡ",
+                "small": "ಚಿಕ್ಕ",
+                "hot": "ಬಿಸಿ",
+                "cold": "ತಣ್ಣನೆಯ",
+                "happy": "ಸಂತೋಷ",
+                "sad": "ದುಃಖ",
+                "love": "ಪ್ರೀತಿ",
+                "like": "ಇಷ್ಟ",
+                "beautiful": "ಸುಂದರ",
+                "good": "ಒಳ್ಳೆಯ",
+                "bad": "ಕೆಟ್ಟ",
+                "today": "ಇಂದು",
+                "tomorrow": "ನಾಳೆ",
+                "yesterday": "ನಿನ್ನೆ",
+                "morning": "ಬೆಳಿಗ್ಗೆ",
+                "afternoon": "ಮಧ್ಯಾಹ್ನ",
+                "evening": "ಸಂಜೆ",
+                "night": "ರಾತ್ರಿ",
+                "day": "ದಿನ",
+                "week": "ವಾರ",
+                "month": "ತಿಂಗಳು",
+                "year": "ವರ್ಷ",
+                "time": "ಸಮಯ",
+                "clock": "ಗಡಿಯಾರ",
+                "hour": "ಗಂಟೆ",
+                "minute": "ನಿಮಿಷ",
+                "second": "ಸೆಕೆಂಡ್",
+                "eat": "ತಿನ್ನು",
+                "drink": "ಕುಡಿ",
+                "sleep": "ನಿದ್ರೆ",
+                "walk": "ನಡೆ",
+                "run": "ಓಡು",
+                "sit": "ಕುಳಿತುಕೊ",
+                "stand": "ನಿಲ್ಲು",
+                "read": "ಓದು",
+                "write": "ಬರೆ",
+                "speak": "ಮಾತನಾಡು",
+                "listen": "ಕೇಳು",
+                "see": "ನೋಡು",
+                "come": "ಬಾ",
+                "go": "ಹೋಗು",
+                "give": "ಕೊಡು",
+                "take": "ತೆಗೆ",
+                "buy": "ಖರೀದಿಸು",
+                "sell": "ಮಾರು",
+                "open": "ತೆರೆ",
+                "close": "ಮುಚ್ಚು",
+                "start": "ಪ್ರಾರಂಭಿಸು",
+                "stop": "ನಿಲ್ಲಿಸು",
+                "help": "ಸಹಾಯ",
+                "learn": "ಕಲಿ",
+                "teach": "ಕಲಿಸು",
+                "understand": "ಅರ್ಥಮಾಡಿಕೊ",
+                "know": "ತಿಳಿದಿರು",
+                "think": "ಯೋಚಿಸು",
+                "remember": "ನೆನಪಿಡು",
+                "forget": "ಮರೆತುಬಿಡು",
+                "wait": "ಕಾಯಿರಿ",
+                "hurry": "ತ್ವರೆ ಮಾಡು",
+                "slow": "ನಿಧಾನ",
+                "fast": "ವೇಗ",
+                "left": "ಎಡ",
+                "right": "ಬಲ",
+                "up": "ಮೇಲೆ",
+                "down": "ಕೆಳಗೆ",
+                "inside": "ಒಳಗೆ",
+                "outside": "ಹೊರಗೆ",
+                "here": "ಇಲ್ಲಿ",
+                "there": "ಅಲ್ಲಿ",
+                "near": "ಹತ್ತಿರ",
+                "far": "ದೂರ",
+                "before": "ಮುಂಚೆ",
+                "after": "ನಂತರ",
+                "now": "ಈಗ",
+                "later": "ನಂತರ",
+                "always": "ಯಾವಾಗಲೂ",
+                "never": "ಎಂದಿಗೂ ಇಲ್ಲ",
+                "sometimes": "ಕೆಲವೊಮ್ಮೆ",
+                "very": "ತುಂಬಾ",
+                "much": "ಹೆಚ್ಚು",
+                "little": "ಸ್ವಲ್ಪ",
+                "many": "ಅನೇಕ",
+                "few": "ಕೆಲವು",
+                "all": "ಎಲ್ಲಾ",
+                "some": "ಕೆಲವು",
+                "none": "ಯಾವುದೂ ಇಲ್ಲ",
+                "i": "ನಾನು",
+                "you": "ನೀವು",
+                "he": "ಅವನು",
+                "she": "ಅವಳು",
+                "we": "ನಾವು",
+                "they": "ಅವರು",
+                "this": "ಇದು",
+                "that": "ಅದು",
+                "these": "ಇವು",
+                "those": "ಅವು",
+                "what": "ಏನು",
+                "where": "ಎಲ್ಲಿ",
+                "when": "ಯಾವಾಗ",
+                "why": "ಏಕೆ",
+                "how": "ಹೇಗೆ",
+                "who": "ಯಾರು",
+                "which": "ಯಾವುದು",
+                "can": "ಸಾಧ್ಯ",
+                "cannot": "ಸಾಧ್ಯವಿಲ್ಲ",
+                "will": "ಮಾಡುತ್ತೇನೆ",
+                "would": "ಮಾಡುತ್ತೇನೆ",
+                "should": "ಮಾಡಬೇಕು",
+                "must": "ತಪ್ಪದೆ",
+                "may": "ಬಹುಶಃ",
+                "might": "ಬಹುಶಃ",
+                "need": "ಅವಶ್ಯಕತೆ",
+                "want": "ಬೇಕು",
+                "like": "ಇಷ್ಟಪಡು",
+                "wish": "ಇಚ್ಛೆ",
+                "hope": "ಭರವಸೆ",
+                "believe": "ನಂಬು",
+                "agree": "ಒಪ್ಪು",
+                "disagree": "ಒಪ್ಪದಿರು",
+                "ask": "ಕೇಳು",
+                "answer": "ಉತ್ತರ",
+                "question": "ಪ್ರಶ್ನೆ",
+                "problem": "ಸಮಸ್ಯೆ",
+                "solution": "ಪರಿಹಾರ",
+                "idea": "ಆಲೋಚನೆ",
+                "plan": "ಯೋಜನೆ",
+                "goal": "ಗುರಿ",
+                "dream": "ಕನಸು",
+                "life": "ಜೀವನ",
+                "death": "ಮರಣ",
+                "birth": "ಜನನ",
+                "age": "ವಯಸ್ಸು",
+                "old": "ಹಳೆಯ",
+                "new": "ಹೊಸ",
+                "young": "ಯುವ",
+                "child": "ಮಗು",
+                "adult": "ವಯಸ್ಕ",
+                "man": "ಮನುಷ್ಯ",
+                "woman": "ಮಹಿಳೆ",
+                "boy": "ಹುಡುಗ",
+                "girl": "ಹುಡುಗಿ",
+                "baby": "ಮಗು",
+                "husband": "ಗಂಡ",
+                "wife": "ಹೆಂಡತಿ",
+                "son": "ಮಗ",
+                "daughter": "ಮಗಳು",
+                "grandfather": "ಅಜ್ಜ",
+                "grandmother": "ಅಜ್ಜಿ",
+                "uncle": "ಚಿಕ್ಕಪ್ಪ",
+                "aunt": "ಅತ್ತೆ",
+                "cousin": "ಸೋದರಸಂಬಂಧಿ",
+                "neighbor": "ನೆರೆಹೊರೆಯವರು",
+                "guest": "ಅತಿಥಿ",
+                "host": "ಆತಿಥ್ಯಕಾರ",
+                "king": "ರಾಜ",
+                "queen": "ರಾಣಿ",
+                "prince": "ರಾಜಕುಮಾರ",
+                "princess": "ರಾಜಕುಮಾರಿ",
+                "god": "ದೇವರು",
+                "goddess": "ದೇವತೆ",
+                "temple": "ದೇವಾಲಯ",
+                "church": "ಚರ್ಚ್",
+                "mosque": "ಮಸೀದಿ",
+                "prayer": "ಪ್ರಾರ್ಥನೆ",
+                "festival": "ಹಬ್ಬ",
+                "celebration": "ಆಚರಣೆ",
+                "party": "ಪಾರ್ಟಿ",
+                "gift": "ಉಡುಗೊರೆ",
+                "present": "ಉಡುಗೊರೆ",
+                "surprise": "ಆಶ್ಚರ್ಯ",
+                "joy": "ಸಂತೋಷ",
+                "peace": "ಶಾಂತಿ",
+                "war": "ಯುದ್ಧ",
+                "fight": "ಹೋರಾಟ",
+                "victory": "ವಿಜಯ",
+                "defeat": "ಸೋಲು",
+                "win": "ಗೆಲ್ಲು",
+                "lose": "ಸೋಲು",
+                "game": "ಆಟ",
+                "play": "ಆಡು",
+                "sport": "ಕ್ರೀಡೆ",
+                "music": "ಸಂಗೀತ",
+                "song": "ಹಾಡು",
+                "dance": "ನೃತ್ಯ",
+                "art": "ಕಲೆ",
+                "painting": "ಚಿತ್ರ",
+                "picture": "ಚಿತ್ರ",
+                "photo": "ಫೋಟೋ",
+                "camera": "ಕ್ಯಾಮೆರಾ",
+                "phone": "ಫೋನ್",
+                "mobile": "ಮೊಬೈಲ್",
+                "computer": "ಕಂಪ್ಯೂಟರ್",
+                "internet": "ಅಂತರ್ಜಾಲ",
+                "email": "ಇಮೇಲ್",
+                "message": "ಸಂದೇಶ",
+                "letter": "ಪತ್ರ",
+                "paper": "ಕಾಗದ",
+                "pencil": "ಪೆನ್ಸಿಲ್",
+                "eraser": "ರಬ್ಬರ್",
+                "ruler": "ರೂಲರ್",
+                "bag": "ಚೀಲ",
+                "box": "ಪೆಟ್ಟಿಗೆ",
+                "bottle": "ಬಾಟಲಿ",
+                "cup": "ಕಪ್",
+                "plate": "ತಟ್ಟೆ",
+                "spoon": "ಚಮಚ",
+                "fork": "ಫೋರ್ಕ್",
+                "knife": "ಚಾಕು",
+                "table": "ಮೇಜು",
+                "chair": "ಕುರ್ಚಿ",
+                "bed": "ಹಾಸಿಗೆ",
+                "pillow": "ದಿಂಬು",
+                "blanket": "ಹೊದಿಕೆ",
+                "door": "ಬಾಗಿಲು",
+                "window": "ಕಿಟಕಿ",
+                "wall": "ಗೋಡೆ",
+                "roof": "ಛಾವಣಿ",
+                "floor": "ನೆಲ",
+                "room": "ಕೋಣೆ",
+                "kitchen": "ಅಡಿಗೆ",
+                "bathroom": "ಸ್ನಾನಗೃಹ",
+                "garden": "ತೋಟ",
+                "park": "ಉದ್ಯಾನವನ",
+                "forest": "ಅರಣ್ಯ",
+                "mountain": "ಪರ್ವತ",
+                "river": "ನದಿ",
+                "lake": "ಸರೋವರ",
+                "sea": "ಸಮುದ್ರ",
+                "ocean": "ಮಹಾಸಾಗರ",
+                "beach": "ಕಡಲತೀರ",
+                "island": "ದ್ವೀಪ",
+                "bridge": "ಸೇತುವೆ",
+                "building": "ಕಟ್ಟಡ",
+                "tower": "ಗೋಪುರ",
+                "statue": "ಪ್ರತಿಮೆ",
+                "monument": "ಸ್ಮಾರಕ",
+                "museum": "ವಸ್ತುಸಂಗ್ರಹಾಲಯ",
+                "library": "ಗ್ರಂಥಾಲಯ",
+                "bank": "ಬ್ಯಾಂಕ್",
+                "post office": "ಅಂಚೆ ಕಚೇರಿ",
+                "police station": "ಪೊಲೀಸ್ ಠಾಣೆ",
+                "fire station": "ಅಗ್ನಿಶಾಮಕ ಠಾಣೆ",
+                "airport": "ವಿಮಾನ ನಿಲ್ದಾಣ",
+                "station": "ನಿಲ್ದಾಣ",
+                "ticket": "ಟಿಕೆಟ್",
+                "passport": "ಪಾಸ್ಪೋರ್ಟ್",
+                "visa": "ವೀಸಾ",
+                "travel": "ಪ್ರಯಾಣ",
+                "journey": "ಪ್ರಯಾಣ",
+                "vacation": "ರಜೆ",
+                "holiday": "ರಜೆ",
+                "trip": "ಪ್ರವಾಸ",
+                "tour": "ಪ್ರವಾಸ",
+                "hotel": "ಹೋಟೆಲ್",
+                "restaurant": "ರೆಸ್ಟೋರೆಂಟ್",
+                "menu": "ಮೆನು",
+                "order": "ಆರ್ಡರ್",
+                "bill": "ಬಿಲ್",
+                "price": "ಬೆಲೆ",
+                "cost": "ವೆಚ್ಚ",
+                "cheap": "ಅಗ್ಗ",
+                "expensive": "ದುಬಾರಿ",
+                "free": "ಉಚಿತ",
+                "discount": "ರಿಯಾಯಿತಿ",
+                "sale": "ಮಾರಾಟ",
+                "shopping": "ಶಾಪಿಂಗ್",
+                "customer": "ಗ್ರಾಹಕ",
+                "service": "ಸೇವೆ",
+                "quality": "ಗುಣಮಟ್ಟ",
+                "quantity": "ಪ್ರಮಾಣ",
+                "size": "ಗಾತ್ರ",
+                "color": "ಬಣ್ಣ",
+                "shape": "ಆಕಾರ",
+                "length": "ಉದ್ದ",
+                "width": "ಅಗಲ",
+                "height": "ಎತ್ತರ",
+                "weight": "ತೂಕ",
+                "light": "ಹಗುರ",
+                "heavy": "ಭಾರ",
+                "strong": "ಬಲಶಾಲಿ",
+                "weak": "ದುರ್ಬಲ",
+                "hard": "ಗಟ್ಟಿ",
+                "soft": "ಮೃದು",
+                "smooth": "ನಯವಾದ",
+                "rough": "ಒರಟು",
+                "clean": "ಶುದ್ಧ",
+                "dirty": "ಕೊಳಕು",
+                "dry": "ಒಣ",
+                "wet": "ತೇವ",
+                "full": "ಪೂರ್ಣ",
+                "empty": "ಖಾಲಿ",
+                "open": "ತೆರೆದ",
+                "closed": "ಮುಚ್ಚಿದ",
+                "right": "ಸರಿ",
+                "wrong": "ತಪ್ಪು",
+                "correct": "ಸರಿ",
+                "incorrect": "ತಪ್ಪು",
+                "true": "ನಿಜ",
+                "false": "ಸುಳ್ಳು",
+                "real": "ನಿಜವಾದ",
+                "fake": "ನಕಲಿ",
+                "natural": "ನೈಸರ್ಗಿಕ",
+                "artificial": "ಕೃತಕ",
+                "important": "ಮುಖ್ಯ",
+                "necessary": "ಅವಶ್ಯಕ",
+                "useful": "ಉಪಯುಕ್ತ",
+                "useless": "ನಿಷ್ಪ್ರಯೋಜಕ",
+                "possible": "ಸಾಧ್ಯ",
+                "impossible": "ಅಸಾಧ್ಯ",
+                "easy": "ಸುಲಭ",
+                "difficult": "ಕಷ್ಟ",
+                "simple": "ಸರಳ",
+                "complex": "ಸಂಕೀರ್ಣ",
+                "safe": "ಸುರಕ್ಷಿತ",
+                "dangerous": "ಅಪಾಯಕಾರಿ",
+                "careful": "ಜಾಗರೂಕ",
+                "careless": "ಅಜಾಗರೂಕ"
+            }
+        };
+
+        // App State
+        let currentUser = null;
+        let cameraStream = null;
+        let recognition = null;
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLogin();
+            setupEventListeners();
+        });
+
+        function checkLogin() {
+            const user = localStorage.getItem('languageAssistantUser');
+            if (user) {
+                currentUser = user;
+                showApp();
+            }
+        }
+
+        function setupEventListeners() {
+            // Login
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+            // Section Cards
+            document.querySelectorAll('.section-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const section = this.getAttribute('data-section');
+                    openSection(section);
+                });
+            });
+
+            // Modal Close Buttons
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    closeModal(modal);
+                });
+            });
+
+            // Camera Controls
+            document.getElementById('captureBtn').addEventListener('click', captureAndExtract);
+            document.getElementById('stopCameraBtn').addEventListener('click', stopCamera);
+
+            // Upload
+            document.getElementById('uploadArea').addEventListener('click', () => {
+                document.getElementById('imageUpload').click();
+            });
+            document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+
+            // Text Controls
+            document.getElementById('speakBtn').addEventListener('click', speakText);
+            document.getElementById('stopSpeakBtn').addEventListener('click', stopSpeaking);
+            document.getElementById('clearTextBtn').addEventListener('click', () => {
+                document.getElementById('inputText').value = '';
+            });
+
+            // Voice Controls
+            document.getElementById('startVoiceBtn').addEventListener('click', startVoiceRecognition);
+            document.getElementById('stopVoiceBtn').addEventListener('click', stopVoiceRecognition);
+            document.getElementById('clearVoiceBtn').addEventListener('click', () => {
+                document.getElementById('voiceText').value = '';
+            });
+
+            // Translator
+            document.getElementById('translateBtn').addEventListener('click', translateText);
+            document.getElementById('speakTranslationBtn').addEventListener('click', speakTranslation);
+
+            // Dictionary
+            document.getElementById('dictionarySearch').addEventListener('input', filterDictionary);
+            document.querySelectorAll('.language-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.language-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    loadDictionary(this.getAttribute('data-lang'));
+                });
+            });
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showMessage('loginMessage', 'Please enter both username and password', 'error');
+                return;
+            }
+
+            // Check if user exists
+            const storedPassword = localStorage.getItem(`user_${username}`);
+            
+            if (storedPassword === null) {
+                // New user - register
+                localStorage.setItem(`user_${username}`, password);
+                localStorage.setItem('languageAssistantUser', username);
+                currentUser = username;
+                showMessage('loginMessage', 'Account created successfully!', 'success');
+                setTimeout(showApp, 1000);
+            } else if (storedPassword === password) {
+                // Existing user - login
+                localStorage.setItem('languageAssistantUser', username);
+                currentUser = username;
+                showMessage('loginMessage', 'Login successful!', 'success');
+                setTimeout(showApp, 1000);
+            } else {
+                // Wrong password
+                showMessage('loginMessage', 'Incorrect password', 'error');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('languageAssistantUser');
+            currentUser = null;
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        function showApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('displayUsername').textContent = currentUser;
+        }
+
+        function showMessage(elementId, message, type) {
+            const messageEl = document.getElementById(elementId);
+            messageEl.textContent = message;
+            messageEl.className = `message ${type}`;
+            messageEl.style.display = 'block';
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 3000);
+        }
+
+        function openSection(section) {
+            const modalMap = {
+                camera: 'cameraModal',
+                upload: 'uploadModal',
+                text: 'textModal',
+                voice: 'voiceModal',
+                translator: 'translatorModal',
+                dictionary: 'dictionaryModal'
+            };
+
+            const modalId = modalMap[section];
+            if (modalId) {
+                document.getElementById(modalId).style.display = 'block';
+                
+                if (section === 'camera') {
+                    startCamera();
+                } else if (section === 'dictionary') {
+                    loadDictionary('telugu');
+                }
+            }
+        }
+
+        function closeModal(modal) {
+            modal.style.display = 'none';
+            
+            if (modal.id === 'cameraModal') {
+                stopCamera();
+            } else if (modal.id === 'voiceModal') {
+                stopVoiceRecognition();
+            }
+        }
+
+        // Camera Functions
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                document.getElementById('cameraVideo').srcObject = cameraStream;
+                showStatus('cameraStatus', 'Camera started - ready to capture', false);
+            } catch (error) {
+                showStatus('cameraStatus', 'Camera access denied or unavailable', false);
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                document.getElementById('cameraVideo').srcObject = null;
+            }
+        }
+
+        async function captureAndExtract() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const context = canvas.getContext('2d');
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+
+            showStatus('cameraStatus', 'Processing image...', false);
+
+            try {
+                const imageData = canvas.toDataURL('image/png');
+                const result = await Tesseract.recognize(imageData, 'eng');
+                document.getElementById('cameraText').value = result.data.text;
+                showStatus('cameraStatus', 'Text extracted successfully!', false);
+            } catch (error) {
+                showStatus('cameraStatus', 'Failed to extract text', false);
+            }
+        }
+
+        // Upload Functions
+        async function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const img = document.getElementById('previewImage');
+                img.src = event.target.result;
+                img.style.display = 'block';
+
+                showStatus('uploadStatus', 'Extracting text from image...', false);
+
+                try {
+                    const result = await Tesseract.recognize(event.target.result, 'eng');
+                    document.getElementById('uploadText').value = result.data.text;
+                    showStatus('uploadStatus', 'Text extracted successfully!', false);
+                } catch (error) {
+                    showStatus('uploadStatus', 'Failed to extract text', false);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Text to Speech Functions
+        function speakText() {
+            const text = document.getElementById('inputText').value.trim();
+            const language = document.getElementById('ttsLanguage').value;
+
+            if (!text) {
+                showStatus('textStatus', 'Please enter some text', false);
+                return;
+            }
+
+            stopSpeaking();
+
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = language;
+            currentUtterance.rate = 0.9;
+
+            currentUtterance.onstart = () => {
+                showStatus('textStatus', 'Speaking...', false);
+            };
+
+            currentUtterance.onend = () => {
+                showStatus('textStatus', 'Finished speaking', false);
+            };
+
+            speechSynthesis.speak(currentUtterance);
+        }
+
+        function stopSpeaking() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                showStatus('textStatus', 'Speech stopped', false);
+            }
+        }
+
+        // Voice Recognition Functions
+        function startVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                showStatus('voiceStatus', 'Speech recognition not supported in this browser', false);
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            const language = document.getElementById('voiceLanguage').value;
+            recognition.lang = language;
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                document.getElementById('startVoiceBtn').style.display = 'none';
+                document.getElementById('stopVoiceBtn').style.display = 'block';
+                document.getElementById('voiceStatus').classList.add('recording');
+                showStatus('voiceStatus', '🎤 Recording... Speak now', true);
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                document.getElementById('voiceText').value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                showStatus('voiceStatus', 'Error: ' + event.error, false);
+                stopVoiceRecognition();
+            };
+
+            recognition.onend = () => {
+                stopVoiceRecognition();
+            };
+
+            recognition.start();
+        }
+
+        function stopVoiceRecognition() {
+            if (recognition) {
+                recognition.stop();
+                recognition = null;
+            }
+            document.getElementById('startVoiceBtn').style.display = 'block';
+            document.getElementById('stopVoiceBtn').style.display = 'none';
+            document.getElementById('voiceStatus').classList.remove('recording');
+            showStatus('voiceStatus', 'Recording stopped', false);
+        }
+
+        // Translator Functions
+        function translateText() {
+            const inputText = document.getElementById('translatorInput').value.trim().toLowerCase();
+            const targetLang = document.getElementById('targetLanguage').value;
+
+            if (!inputText) {
+                document.getElementById('translationResult').style.display = 'none';
+                return;
+            }
+
+            const langDict = dictionary[targetLang];
+            let translation = '';
+
+            // Split into sentences
+            const sentences = inputText.split(/[.!?]+/).filter(s => s.trim());
+            
+            sentences.forEach(sentence => {
+                const words = sentence.trim().split(/\s+/);
+                let translatedSentence = '';
+
+                // Try to match complete phrases first
+                for (let i = 0; i < words.length; i++) {
+                    let matched = false;
+                    
+                    // Try matching 5-word phrases down to 1-word
+                    for (let len = Math.min(5, words.length - i); len > 0; len--) {
+                        const phrase = words.slice(i, i + len).join(' ');
+                        if (langDict[phrase]) {
+                            translatedSentence += langDict[phrase] + ' ';
+                            i += len - 1;
+                            matched = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!matched) {
+                        translatedSentence += words[i] + ' ';
+                    }
+                }
+                
+                translation += translatedSentence.trim() + '. ';
+            });
+
+            document.getElementById('translatedText').textContent = translation.trim();
+            document.getElementById('translationResult').style.display = 'block';
+        }
+
+        function speakTranslation() {
+            const translatedText = document.getElementById('translatedText').textContent;
+            const targetLang = document.getElementById('targetLanguage').value;
+
+            if (!translatedText) return;
+
+            const langMap = {
+                telugu: 'te-IN',
+                hindi: 'hi-IN',
+                tamil: 'ta-IN',
+                kannada: 'kn-IN'
+            };
+
+            const utterance = new SpeechSynthesisUtterance(translatedText);
+            utterance.lang = langMap[targetLang];
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+
+        // Dictionary Functions
+        function loadDictionary(language) {
+            const listEl = document.getElementById('dictionaryList');
+            const langDict = dictionary[language];
+            
+            listEl.innerHTML = '';
+
+            Object.entries(langDict).forEach(([english, translation]) => {
+                const item = document.createElement('div');
+                item.className = 'dictionary-item';
+                item.innerHTML = `
+                    <div class="word-english">${english} <span class="speak-icon">🔊</span></div>
+                    <div class="word-translation">${translation}</div>
+                `;
+                
+                item.querySelector('.speak-icon').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    speakWord(translation, language);
+                });
+
+                item.addEventListener('click', () => {
+                    speakWord(translation, language);
+                });
+
+                listEl.appendChild(item);
+            });
+        }
+
+        function filterDictionary() {
+            const searchTerm = document.getElementById('dictionarySearch').value.toLowerCase();
+            const items = document.querySelectorAll('.dictionary-item');
+
+            items.forEach(item => {
+                const english = item.querySelector('.word-english').textContent.toLowerCase();
+                const translation = item.querySelector('.word-translation').textContent.toLowerCase();
+                
+                if (english.includes(searchTerm) || translation.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function speakWord(text, language) {
+            const langMap = {
+                telugu: 'te-IN',
+                hindi: 'hi-IN',
+                tamil: 'ta-IN',
+                kannada: 'kn-IN'
+            };
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langMap[language];
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        }
+
+        function showStatus(elementId, message, keepVisible) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.textContent = message;
+            statusEl.style.display = 'block';
+            
+            if (!keepVisible) {
+                setTimeout(() => {
+                    statusEl.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                closeModal(e.target);
+            }
+        });
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9b5a208e71743989',t:'MTc2NzAyMDAwOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
